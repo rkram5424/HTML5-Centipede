@@ -1,4 +1,12 @@
-var game = new Phaser.Game(512, 672, Phaser.CANVAS, 'gameContainer', { preload: preload, create: create, update: update}, null, false, false);
+var TOUCH = Phaser.Device.touch;
+var game;
+
+if (TOUCH){
+  game = new Phaser.Game(512, 672, Phaser.CANVAS, 'game', { preload: preload, create: create, update: update}, null, false, false);
+}
+else {
+  game = new Phaser.Game(512, 528, Phaser.CANVAS, 'game', { preload: preload, create: create, update: update}, null, false, false);
+}
 
 // Global variables, or Globs as I call them.
 var player, bolts, centipedes, centipede, section, spider, scorpion, flea, mushrooms; // Characters/things you can see
@@ -6,9 +14,9 @@ var lives, score, speed, wave, wave_offset, fire_button, cursors, touch, touch_b
 var flea_timer, scorpion_timer, spider_timer; // Timers
 
 // Constants
-PLAYER_SPEED = 300;
-BOUND_PLAYER_HIGH = 432;
-BOUND_PLAYER_LOW = 512;
+var PLAYER_SPEED = 300;
+var BOUND_PLAYER_HIGH = 432;
+var BOUND_PLAYER_LOW = 512;
 
 // Set up assets.
 function preload() {
@@ -18,7 +26,6 @@ function preload() {
 
 // Set up objects and groups and place the first centipede.
 function create(){
-  // touch = true;
   mushrows = [];
   lives = 3;
   speed = 5;
@@ -47,7 +54,12 @@ function create(){
   centipedes.physicsBodyType = Phaser.Physics.ARCADE;
   centipedes.setAll('checkWorldBounds', true);
 
-  player = game.add.sprite(game.width/2, game.height - 152, 'atlas', 'player');
+  if (TOUCH){
+    player = game.add.sprite(game.width/2, game.height - 152, 'atlas', 'player');
+  }
+  else{
+    player = game.add.sprite(game.width/2, game.height, 'atlas', 'player');
+  }
   player.anchor.setTo(0.5, 0.5);
   game.physics.enable(player, Phaser.Physics.ARCADE);
   player.body.collideWorldBounds = true;
@@ -60,7 +72,7 @@ function create(){
   touch_button.anchor.setTo(0.5, 0.5);
 
   spawnCentipede(game.width/2, 0);
-  spawnScorpion(512, 64, -1);
+  spawnScorpion();
 }
 
 // Called 60(maybe?) times a second, the heartbeat of the game.
@@ -71,6 +83,18 @@ function update(){
   game.physics.arcade.collide(scorpion, mushrooms, scorpionHitsMushroom, null, this);
   game.physics.arcade.collide(centipedes, player, playerDies, null, this);
   player.body.velocity.setTo(0, 0);
+
+
+  if ((game.input.x < 512) && (game.input.x > 0) && (game.input.y < 672) && (game.input.y > 0)){
+    player.body.x = game.input.x;
+    if (game.input.y >= BOUND_PLAYER_HIGH && game.input.y <= BOUND_PLAYER_LOW){
+      player.body.y = game.input.y;  
+    }
+  }
+
+  if (game.input.activePointer.isDown){
+    fireBolt();
+  }
 
   if (cursors.left.isDown)
   {
@@ -176,8 +200,17 @@ function spawnCentipede(x, y){
   centipede.body.collideWorldBounds = true;
 }
 
-function spawnScorpion(x, y, dir){
-  scorpion = scorpion.create(x, y, 'atlas', 'scorpion00');
+function spawnScorpion(){
+  var dir = Math.floor(Math.random() * 2);
+  if (dir == 0){dir = -1}
+  var row = Math.floor((Math.random() * 5)  + 5) * 16;
+  var x = 512;
+  if (dir == 1){
+    x = 0;
+  }
+  scorpion = scorpion.create(x, row, 'atlas', 'scorpion00');
+  scorpion.anchor.setTo(.5, 1);
+  if (dir == 1){scorpion.scale.x = -1};
   scorpion.animations.add('move', Phaser.Animation.generateFrameNames('scorpion', 0, 3, '', 2), 10, true);
   scorpion.animations.play('move');
   scorpion.direction = dir;
@@ -195,7 +228,7 @@ function moveCentipede(cent){
 }
 
 function moveScorpion(){
-  scorpion.x += speed * scorpion.direction;
+  scorpion.x += (speed / 2) * scorpion.direction;
 }
 
 // // function moveSpider(){}
