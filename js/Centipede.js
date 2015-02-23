@@ -35,8 +35,8 @@ function create(){
   wave_offset = 0;
   game.physics.startSystem(Phaser.Physics.ARCADE);
 
-  var score_style = { font: "16px Arial", fill: "#ff0044", align: "center" };
-  game.add.text(game.world.centerX, 0, hi_score, score_style);
+  var score_style = { font: "16px Arial", fill: "#ff0000", align: "center" };
+  game.add.text(game.width/2, 0, hi_score, score_style);
 
   mushrooms = game.add.group();
   mushrooms.enableBody = true;
@@ -88,6 +88,7 @@ function update(){
   game.physics.arcade.overlap(scorpion, mushrooms, scorpionHitsMushroom, null, this);
   // game.physics.arcade.collide(centipedes, player, playerDies, null, this);
   game.physics.arcade.overlap(flea, player, fleaHitsPlayer, null, this);
+  game.physics.arcade.overlap(bolts, flea, boltHitsFlea, null, this);
   player.body.velocity.setTo(0, 0);
 
 
@@ -103,10 +104,9 @@ function update(){
   //     player.body.y = game.input.y;
   //   }
   // }
-
-  if (game.input.activePointer.isDown){
-    fireBolt();
-  }
+  // if (game.input.activePointer.isDown){
+  //   fireBolt();
+  // }
 
   if (cursors.left.isDown)
   {
@@ -173,12 +173,20 @@ function touchButton(){
   });
 }
 
+/////////////////////////
+// Mechanics functions //
+/////////////////////////
+
 function playerDies(){
   player.animations.play('die', 30, false, true);
   lives -= 1;
   // if (lives < 0){
   //   gameOver();
   // }
+}
+
+function fleaDies(){
+  flea.animations.play('die', 30, false, true);
 }
 
 function fireBolt() {
@@ -189,7 +197,11 @@ function fireBolt() {
   }
 }
 
-// // Spawning functions. Get a room!
+// function gameOver(){}
+
+/////////////////////////////////////
+// Spawning functions. Get a room! //
+/////////////////////////////////////
 
 function spawnMushrooms(){
   var chance = 0;
@@ -241,13 +253,15 @@ function spawnFlea(){
   flea.outOfBoundsKill = true;
   game.physics.enable(flea, Phaser.Physics.ARCADE);
   flea.animations.add('move', Phaser.Animation.generateFrameNames('flea', 0, 3, '', 2), 10, true);
+  flea.animations.add('die', Phaser.Animation.generateFrameNames('explosion', 0, 5, '', 2), 30, true);
   flea.animations.play('move');
 }
 
-// // function spawnSpider(x, y, dir){}
-// // function gameOver(){}
+// function spawnSpider(x, y, dir){}
 
-// // AI functions. SKYNET!!!
+/////////////////////////////
+// AI functions. SKYNET!!! //
+/////////////////////////////
 
 function moveCentipede(cent){
   // This function will be the heart and soul of the centipede movement algorithm. Cool things to come!
@@ -262,9 +276,11 @@ function moveFlea(){
   flea.y += (speed);
 }
 
-// // function moveSpider(){}
+// function moveSpider(){}
 
-// // Collision functions. Let's exchange insurance info.
+/////////////////////////////////////////////////////////
+// Collision functions. Let's exchange insurance info. //
+/////////////////////////////////////////////////////////
 
 function boltHitsMushroom (bolt, mushroom) {
   bolt.kill();
@@ -277,8 +293,12 @@ function boltHitsMushroom (bolt, mushroom) {
   }
 }
 
+function boltHitsFlea (){
+  fleaDies();
+}
+
 function centipedeHitsMushroom(centipede, mushroom){
-  centipede.kill();
+  //centipede.kill();
 }
 
 function scorpionHitsMushroom(scorpion, mushroom){
@@ -287,5 +307,13 @@ function scorpionHitsMushroom(scorpion, mushroom){
 }
 
 function fleaHitsPlayer(flea, player){
+  playerDies();
+}
+
+function spiderHitsPlayer(spider, player){
+  playerDies();
+}
+
+function centipedeHitsPlayer(centipede, player){
   playerDies();
 }
