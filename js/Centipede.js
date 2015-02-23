@@ -15,7 +15,7 @@ else {
 }
 
 // Global variables, or Globs as I call them.
-var player, bolts, centipedes, centipede, section, spider, scorpion, flea, mushrooms; // Characters/things you can see
+var player, bolts, centipedes, centipede, section, spider, scorpion, flea, mushrooms, life_sprites; // Characters/things you can see
 var lives, score, speed, wave, wave_offset, fire_button, cursors, touch, touch_button, mushrows; // Mechanics
 var flea_timer, scorpion_timer, spider_timer; // Timers
 
@@ -34,6 +34,9 @@ function create(){
   hi_score = 16543;
   wave_offset = 0;
   game.physics.startSystem(Phaser.Physics.ARCADE);
+
+  var score_style = { font: "16px Arial", fill: "#ff0044", align: "center" };
+  game.add.text(game.world.centerX, 0, hi_score, score_style);
 
   mushrooms = game.add.group();
   mushrooms.enableBody = true;
@@ -68,11 +71,11 @@ function create(){
   cursors = game.input.keyboard.createCursorKeys();
   fire_button = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
-  touch_button = game.add.button(256, 600, 'button', touchButton, this, 2, 1, 0); 
+  touch_button = game.add.button(256, 616, 'button', touchButton, this, 2, 1, 0); 
   touch_button.name = 'touch_button'; 
   touch_button.anchor.setTo(0.5, 0.5);
 
-  spawnCentipede(game.width/2, 0);
+  spawnCentipede(game.width/2, 16);
   spawnScorpion();
   spawnFlea();
 }
@@ -192,7 +195,7 @@ function spawnMushrooms(){
   var chance = 0;
   for (var i = 0; i < 512; i += 16) {
     mushrows.push(i);
-    for (var j = 0; j < 512; j += 16){
+    for (var j = 16; j < 512; j += 16){
       chance = Math.floor(Math.random() * 25) + 1;
       if (chance == 1) {
         var mushroom = mushrooms.create(i, j, 'atlas', 'mushroom00');
