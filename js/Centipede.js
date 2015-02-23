@@ -17,7 +17,7 @@ else {
 // Global variables, or Globs as I call them.
 var player, bolts, centipedes, centipede, section, spider, scorpion, flea, mushrooms, life_sprites; // Characters/things you can see
 var lives, score, speed, wave, wave_offset, fire_button, cursors, touch, touch_button, mushrows; // Mechanics
-var flea_timer, scorpion_timer, spider_timer; // Timers
+var flea_timer, scorpion_timer, spider_timer, score_timer; // Timers
 
 // Set up assets.
 function preload() {
@@ -36,6 +36,7 @@ function create(){
   game.physics.startSystem(Phaser.Physics.ARCADE);
 
   var score_style = { font: "16px Arial", fill: "#ff0000", align: "center" };
+  game.add.text(0, 0, score, score_style);
   game.add.text(game.width/2, 0, hi_score, score_style);
 
   mushrooms = game.add.group();
@@ -89,6 +90,7 @@ function update(){
   // game.physics.arcade.collide(centipedes, player, playerDies, null, this);
   game.physics.arcade.overlap(flea, player, fleaHitsPlayer, null, this);
   game.physics.arcade.overlap(bolts, flea, boltHitsFlea, null, this);
+  game.physics.arcade.overlap(bolts, scorpion, boltHitsScorpion, null, this);
   player.body.velocity.setTo(0, 0);
 
 
@@ -186,7 +188,18 @@ function playerDies(){
 }
 
 function fleaDies(){
+  flea.alive = false;
   flea.animations.play('die', 30, false, true);
+}
+
+function scorpionDies(){
+  scorpion.alive = false;
+  scorpion.animations.play('die', 30, false, true);
+}
+
+function spiderDies(){
+  spider.alive = false;
+  spider.animations.play('die', 30, false, true);
 }
 
 function fireBolt() {
@@ -238,11 +251,13 @@ function spawnScorpion(){
     x = 0;
   }
   scorpion = game.add.sprite(x, row, 'atlas', 'scorpion00');
+  scorpion.alive = true;
   scorpion.outOfBoundsKill = true;
   game.physics.enable(scorpion, Phaser.Physics.ARCADE);
   scorpion.anchor.setTo(.5, 1);
   if (dir == 1){scorpion.scale.x = -1};
   scorpion.animations.add('move', Phaser.Animation.generateFrameNames('scorpion', 0, 3, '', 2), 10, true);
+  scorpion.animations.add('die', Phaser.Animation.generateFrameNames('bigexplosion', 0, 7, '', 2), 30, true);
   scorpion.animations.play('move');
   scorpion.direction = dir;
 }
@@ -250,14 +265,24 @@ function spawnScorpion(){
 function spawnFlea(){
   var col = (Math.floor(Math.random() * 32) * 16);
   flea = game.add.sprite(col, 0, 'atlas', 'flea00');
+  flea.alive = true;
   flea.outOfBoundsKill = true;
   game.physics.enable(flea, Phaser.Physics.ARCADE);
   flea.animations.add('move', Phaser.Animation.generateFrameNames('flea', 0, 3, '', 2), 10, true);
   flea.animations.add('die', Phaser.Animation.generateFrameNames('explosion', 0, 5, '', 2), 30, true);
   flea.animations.play('move');
+  // drop mushrooms
 }
 
-// function spawnSpider(x, y, dir){}
+function spawnSpider(){
+  spider = game.add.sprite(0, 480, 'atlas', 'spider00');
+  spider.alive = true;
+  spider.outOfBoundsKill = true;
+  game.physics.enable(spider, Phaser.Physics.ARCADE);
+  spider.animations.add('move', Phaser.Animation.generateFrameNames('spider', 0, 7, '', 2), 30, true);
+  spider.animations.add('die', Phaser.Animation.generateFrameNames('bigexplosion', 0, 7, '', 2), 30, true);
+  spider.animations.play('move');
+}
 
 /////////////////////////////
 // AI functions. SKYNET!!! //
@@ -269,11 +294,15 @@ function moveCentipede(cent){
 }
 
 function moveScorpion(){
-  scorpion.x += (speed / 2) * scorpion.direction;
+  if (scorpion.alive){
+    scorpion.x += (speed / 2) * scorpion.direction;
+  }
 }
 
 function moveFlea(){
-  flea.y += (speed);
+  if (flea.alive){
+    flea.y += (speed);
+  }
 }
 
 // function moveSpider(){}
@@ -293,8 +322,19 @@ function boltHitsMushroom (bolt, mushroom) {
   }
 }
 
-function boltHitsFlea (){
+function boltHitsFlea(){
+  score += 500;
   fleaDies();
+}
+
+function boltHitsScorpion(){
+  score += 1000;
+  scorpionDies();
+}
+
+function boltHitsSpider(){
+  score += 900;
+  spiderDies();
 }
 
 function centipedeHitsMushroom(centipede, mushroom){
