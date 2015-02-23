@@ -1,22 +1,23 @@
+// Constants
+var HEADER_OFFSET = 16;
+var PLAYER_SPEED = 300;
+var BOUND_PLAYER_HIGH = 432;
+var BOUND_PLAYER_LOW = 512;
 var TOUCH = Phaser.Device.touch;
+
 var game;
 
 if (TOUCH){
-  game = new Phaser.Game(512, 672, Phaser.CANVAS, 'game', { preload: preload, create: create, update: update}, null, false, false);
+  game = new Phaser.Game(512, 688, Phaser.CANVAS, 'game', { preload: preload, create: create, update: update}, null, false, false);
 }
 else {
-  game = new Phaser.Game(512, 528, Phaser.CANVAS, 'game', { preload: preload, create: create, update: update}, null, false, false);
+  game = new Phaser.Game(512, 544, Phaser.CANVAS, 'game', { preload: preload, create: create, update: update}, null, false, false);
 }
 
 // Global variables, or Globs as I call them.
 var player, bolts, centipedes, centipede, section, spider, scorpion, flea, mushrooms; // Characters/things you can see
 var lives, score, speed, wave, wave_offset, fire_button, cursors, touch, touch_button, mushrows; // Mechanics
 var flea_timer, scorpion_timer, spider_timer; // Timers
-
-// Constants
-var PLAYER_SPEED = 300;
-var BOUND_PLAYER_HIGH = 432;
-var BOUND_PLAYER_LOW = 512;
 
 // Set up assets.
 function preload() {
@@ -29,16 +30,15 @@ function create(){
   mushrows = [];
   lives = 3;
   speed = 5;
+  score = 0;
+  hi_score = 16543;
   wave_offset = 0;
   game.physics.startSystem(Phaser.Physics.ARCADE);
 
   mushrooms = game.add.group();
   mushrooms.enableBody = true;
+  mushrooms.physicsBodyType = Phaser.Physics.ARCADE;
   spawnMushrooms();
-
-  scorpion = game.add.group();
-  scorpion.enableBody = true;
-  scorpion.physicsBodyType = Phaser.Physics.ARCADE;
 
   bolts = game.add.group();
   bolts.enableBody = true;
@@ -63,6 +63,7 @@ function create(){
   player.anchor.setTo(0.5, 0.5);
   game.physics.enable(player, Phaser.Physics.ARCADE);
   player.body.collideWorldBounds = true;
+  player.animations.add('die', Phaser.Animation.generateFrameNames('bigexplosion', 0, 7, '', 2), 30, true);
 
   cursors = game.input.keyboard.createCursorKeys();
   fire_button = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
@@ -73,6 +74,7 @@ function create(){
 
   spawnCentipede(game.width/2, 0);
   spawnScorpion();
+  spawnFlea();
 }
 
 // Called 60(maybe?) times a second, the heartbeat of the game.
@@ -80,17 +82,24 @@ function update(){
   game.physics.arcade.collide(player, mushrooms);
   game.physics.arcade.collide(bolts, mushrooms, boltHitsMushroom, null, this);
   game.physics.arcade.collide(centipedes, mushrooms, centipedeHitsMushroom, null, this);
-  game.physics.arcade.collide(scorpion, mushrooms, scorpionHitsMushroom, null, this);
-  game.physics.arcade.collide(centipedes, player, playerDies, null, this);
+  game.physics.arcade.overlap(scorpion, mushrooms, scorpionHitsMushroom, null, this);
+  // game.physics.arcade.collide(centipedes, player, playerDies, null, this);
+  game.physics.arcade.overlap(flea, player, fleaHitsPlayer, null, this);
   player.body.velocity.setTo(0, 0);
 
 
-  if ((game.input.x < 512) && (game.input.x > 0) && (game.input.y < 672) && (game.input.y > 0)){
-    player.body.x = game.input.x;
-    if (game.input.y >= BOUND_PLAYER_HIGH && game.input.y <= BOUND_PLAYER_LOW){
-      player.body.y = game.input.y;  
-    }
-  }
+  // if ((game.input.x < 512) && (game.input.x > 0) && (game.input.y < 672) && (game.input.y > 0)){
+  //   player.body.x = game.input.x;
+  //   if (game.input.y <= BOUND_PLAYER_HIGH){ // && game.input.y <= BOUND_PLAYER_LOW){
+  //     player.body.y = BOUND_PLAYER_HIGH;  
+  //   }
+  //   else if (game.input.y >= BOUND_PLAYER_LOW){ // && game.input.y <= BOUND_PLAYER_LOW){
+  //     player.body.y = BOUND_PLAYER_LOW;  
+  //   }
+  //   else{
+  //     player.body.y = game.input.y;
+  //   }
+  // }
 
   if (game.input.activePointer.isDown){
     fireBolt();
@@ -126,6 +135,10 @@ function update(){
   if (scorpion){
     moveScorpion();
   }
+
+  if (flea){
+    moveFlea();
+  }
 }
 
 function touchButton(){
@@ -158,10 +171,11 @@ function touchButton(){
 }
 
 function playerDies(){
+  player.animations.play('die', 30, false, true);
   lives -= 1;
-  if (lives < 0){
-    gameOver();
-  }
+  // if (lives < 0){
+  //   gameOver();
+  // }
 }
 
 function fireBolt() {
@@ -208,7 +222,9 @@ function spawnScorpion(){
   if (dir == 1){
     x = 0;
   }
-  scorpion = scorpion.create(x, row, 'atlas', 'scorpion00');
+  scorpion = game.add.sprite(x, row, 'atlas', 'scorpion00');
+  scorpion.outOfBoundsKill = true;
+  game.physics.enable(scorpion, Phaser.Physics.ARCADE);
   scorpion.anchor.setTo(.5, 1);
   if (dir == 1){scorpion.scale.x = -1};
   scorpion.animations.add('move', Phaser.Animation.generateFrameNames('scorpion', 0, 3, '', 2), 10, true);
@@ -216,8 +232,16 @@ function spawnScorpion(){
   scorpion.direction = dir;
 }
 
+function spawnFlea(){
+  var col = (Math.floor(Math.random() * 32) * 16);
+  flea = game.add.sprite(col, 0, 'atlas', 'flea00');
+  flea.outOfBoundsKill = true;
+  game.physics.enable(flea, Phaser.Physics.ARCADE);
+  flea.animations.add('move', Phaser.Animation.generateFrameNames('flea', 0, 3, '', 2), 10, true);
+  flea.animations.play('move');
+}
+
 // // function spawnSpider(x, y, dir){}
-// // function spawnFlea(x, y){}
 // // function gameOver(){}
 
 // // AI functions. SKYNET!!!
@@ -231,8 +255,11 @@ function moveScorpion(){
   scorpion.x += (speed / 2) * scorpion.direction;
 }
 
+function moveFlea(){
+  flea.y += (speed);
+}
+
 // // function moveSpider(){}
-// // function moveFlea(){}
 
 // // Collision functions. Let's exchange insurance info.
 
@@ -254,4 +281,8 @@ function centipedeHitsMushroom(centipede, mushroom){
 function scorpionHitsMushroom(scorpion, mushroom){
   mushroom.poisoned = true;
   mushroom.loadTexture('atlas', 'poison0' + mushroom.hits);
+}
+
+function fleaHitsPlayer(flea, player){
+  playerDies();
 }
