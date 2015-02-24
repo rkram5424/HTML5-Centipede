@@ -16,10 +16,10 @@ else {
 
 // Global variables, or Globs as I call them.
 // Characters/things you can see
-var player, bolts, centipedes, centipede, section, spider, scorpion, flea, mushrooms, life_sprites; 
+var player, bolts, centipedes, centipede, section, spider, scorpion, flea, mushrooms, life_sprites, monsters;
 // Mechanics
 var lives, score, speed, wave, wave_offset, fire_button, cursors, touch, touch_button, mushrows, mush_array;
-// Timers 
+// Timers
 var flea_timer, scorpion_timer, spider_timer, score_timer; // Timers
 
 // Set up assets.
@@ -76,9 +76,35 @@ function create(){
   cursors = game.input.keyboard.createCursorKeys();
   fire_button = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
-  touch_button = game.add.button(256, 616, 'button', touchButton, this, 2, 1, 0); 
-  touch_button.name = 'touch_button'; 
+  touch_button = game.add.button(256, 616, 'button', touchButton, this, 2, 1, 0);
+  touch_button.name = 'touch_button';
   touch_button.anchor.setTo(0.5, 0.5);
+
+  monsters = new MonsterManager();
+  var monster = new MonsterGenerator(game, 'atlas', monsters);
+
+  var scorpion = new monster('scorpion00', 10);
+  scorpion.addAnimation('move', 'scorpion');
+  scorpion.addAnimation('die', 'explosion');
+  scorpion.onCreation(function(creature, animations){
+      for(var i = 0, j = animations.length; i < j;i++){
+          if(animations[i].animation === 'move'){
+              creature.animations.play('move');
+          }
+      }
+  });
+
+  // Create 10 scorpions
+  for(var i = 0;i < 10;i++){
+      function rand(){
+          return Math.random() * 400;
+      }
+      scorpion.create(rand(), rand(), function(creature){
+          if(creature.alive){
+              creature.x += -1;
+          }
+      });
+  }
 
   spawnCentipede(game.width/2, 16);
   spawnScorpion();
@@ -101,10 +127,10 @@ function update(){
   // if ((game.input.x < 512) && (game.input.x > 0) && (game.input.y < 672) && (game.input.y > 0)){
   //   player.body.x = game.input.x;
   //   if (game.input.y <= BOUND_PLAYER_HIGH){ // && game.input.y <= BOUND_PLAYER_LOW){
-  //     player.body.y = BOUND_PLAYER_HIGH;  
+  //     player.body.y = BOUND_PLAYER_HIGH;
   //   }
   //   else if (game.input.y >= BOUND_PLAYER_LOW){ // && game.input.y <= BOUND_PLAYER_LOW){
-  //     player.body.y = BOUND_PLAYER_LOW;  
+  //     player.body.y = BOUND_PLAYER_LOW;
   //   }
   //   else{
   //     player.body.y = game.input.y;
@@ -145,6 +171,8 @@ function update(){
     moveScorpion();
   }
 
+  monsters.move();
+
   if (flea){
     moveFlea();
   }
@@ -158,11 +186,11 @@ function touchButton(){
       type: 'joystick',
       position: {left: '15px', bottom: '10px'},
       joystick: {
-        touchMove: function(details) { 
+        touchMove: function(details) {
           player.body.velocity.x = (details.normalizedX * PLAYER_SPEED);
           player.body.velocity.y = -(details.normalizedY * PLAYER_SPEED);
         }
-      } 
+      }
     },
     right: {
       position: {right: '5px', bottom: '17px'},
@@ -235,8 +263,73 @@ function spawnMushrooms(){
         mushroom.hits = 0;
         mushroom.poisoned = false;
       }
-    } 
+    }
   }
+}
+
+// Should be responsible for placement/spawning of all monsters truly
+function MonsterManager(){
+    var monsters = [];
+
+    // Add a guy
+    this.addMonster = function(monster){
+        monsters.push(monster);
+    }
+
+    // Make them groove
+    this.move = function(){
+        for(var i = 0, j = monsters.length;i < j;i++){
+            monsters[i].move();
+        }
+    }
+}
+
+// Define a new monster type
+// var monsterGenerator = new MonsterGenerator(game, 'atlas');
+// var scorpion = new Monster('scorpion00', 10);
+// var scorp1 = scorpion.create(0, 0);
+// scorp1.addAnimation('move')
+function MonsterGenerator(game, atlas, manager){
+    return function Monster(name, health){
+        var self = this;
+        var animations = [];
+        var creation, death;
+        self.create = function(x, y, moveFn){
+            var creature = game.add.sprite(x, y, atlas, name);
+            game.physics.enable(creature, Phaser.Physics.ARCADE);
+            creature.health = health;
+            for(var i = 0, j = animations.length; i < j;i++){
+                creature.animations.add(animations[i].animation, Phaser.Animation.generateFrameNames(animations[i].frame, 0, 3, '', 2), 10, true);
+            }
+            creature.move = function(){
+                moveFn(creature);
+            };
+            creation(creature);
+            manager.addMonster(creature);
+            return creature;
+        }
+
+        // Add animations
+        self.addAnimation = function(animation, frame){
+            animations.push({'animation': animation, 'frame': frame});
+        }
+
+        self.onCreation = function(fn){
+            creation = function(creature){
+                fn(creature, animations);
+            }
+        }
+
+        self.onDeath = function(fn){
+            self.death = fn(animations);
+        }
+
+        // Try not to use too often
+        function set(key, value){
+            creature[key] = value;
+        }
+        self.set = set;
+    }
 }
 
 function spawnCentipede(x, y){
