@@ -15,8 +15,11 @@ else {
 }
 
 // Global variables, or Globs as I call them.
-var player, bolts, centipedes, centipede, section, spider, scorpion, flea, mushrooms, life_sprites; // Characters/things you can see
-var lives, score, speed, wave, wave_offset, fire_button, cursors, touch, touch_button, mushrows; // Mechanics
+// Characters/things you can see
+var player, bolts, centipedes, centipede, section, spider, scorpion, flea, mushrooms, life_sprites; 
+// Mechanics
+var lives, score, speed, wave, wave_offset, fire_button, cursors, touch, touch_button, mushrows, mush_array;
+// Timers 
 var flea_timer, scorpion_timer, spider_timer, score_timer; // Timers
 
 // Set up assets.
@@ -65,6 +68,7 @@ function create(){
     player = game.add.sprite(game.width/2, game.height, 'atlas', 'player');
   }
   player.anchor.setTo(0.5, 0.5);
+  player.alive = true;
   game.physics.enable(player, Phaser.Physics.ARCADE);
   player.body.collideWorldBounds = true;
   player.animations.add('die', Phaser.Animation.generateFrameNames('bigexplosion', 0, 7, '', 2), 30, true);
@@ -180,6 +184,7 @@ function touchButton(){
 /////////////////////////
 
 function playerDies(){
+  player.alive = false;
   player.animations.play('die', 30, false, true);
   lives -= 1;
   // if (lives < 0){
@@ -203,10 +208,12 @@ function spiderDies(){
 }
 
 function fireBolt() {
-  var bolt = bolts.getFirstExists(false);
-  if (bolt){
+  if (player.alive){ // Roberto found this bug.
+    var bolt = bolts.getFirstExists(false);
+    if (bolt){
       bolt.reset(player.x, player.y + 8);
       bolt.body.velocity.y = -800;
+    }
   }
 }
 
