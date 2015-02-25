@@ -93,17 +93,18 @@ function create(){
           }
       }
   });
+  scorpion.set('dir', Math.random() < 0.5 ? -1 : 1);
+  scorpion.addMovement(function(creature){
+      creature.x += 5;
+      creature.y += 5;
+  });
 
   // Create 10 scorpions
   for(var i = 0;i < 10;i++){
       function rand(){
           return Math.random() * 400;
       }
-      scorpion.create(rand(), rand(), function(creature){
-          if(creature.alive){
-              creature.x += -1;
-          }
-      });
+      scorpion.create(rand(), rand());
   }
 
   spawnCentipede(game.width/2, 16);
@@ -294,6 +295,7 @@ function MonsterGenerator(game, atlas, manager){
         var self = this;
         var animations = [];
         var creation, death;
+        self.attrs = {};
         self.create = function(x, y, moveFn){
             var creature = game.add.sprite(x, y, atlas, name);
             game.physics.enable(creature, Phaser.Physics.ARCADE);
@@ -301,12 +303,23 @@ function MonsterGenerator(game, atlas, manager){
             for(var i = 0, j = animations.length; i < j;i++){
                 creature.animations.add(animations[i].animation, Phaser.Animation.generateFrameNames(animations[i].frame, 0, 3, '', 2), 10, true);
             }
-            creature.move = function(){
+            for(var i = 0, j = Object.keys(this['attrs']);i < j.length;i++){
+                creature[j[i]] = this['attrs'][j[i]];
+            }
+            creature.move = moveFn ? function(){
                 moveFn(creature);
-            };
+            } : self.movement(creature);
             creation(creature);
             manager.addMonster(creature);
             return creature;
+        }
+
+        self.addMovement = function(fn){
+            self.movement = function(creature){
+                return function(){
+                    fn(creature);
+                }
+            }
         }
 
         // Add animations
@@ -325,10 +338,9 @@ function MonsterGenerator(game, atlas, manager){
         }
 
         // Try not to use too often
-        function set(key, value){
-            creature[key] = value;
+        self.set = function(key, value){
+            this['attrs'][key] = value;
         }
-        self.set = set;
     }
 }
 
