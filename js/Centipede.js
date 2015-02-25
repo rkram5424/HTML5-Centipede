@@ -80,31 +80,52 @@ function create(){
   touch_button.name = 'touch_button';
   touch_button.anchor.setTo(0.5, 0.5);
 
-  monsters = new MonsterManager();
+  monsters = new MonsterManager(game);
   var monster = new MonsterGenerator(game, 'atlas', monsters);
-
-  var scorpion = new monster('scorpion00', 10);
-  scorpion.addAnimation('move', 'scorpion');
-  scorpion.addAnimation('die', 'explosion');
-  scorpion.onCreation(function(creature, animations){
-      for(var i = 0, j = animations.length; i < j;i++){
-          if(animations[i].animation === 'move'){
-              creature.animations.play('move');
-          }
-      }
+  var spider = new monster('spider00', 1);
+  spider.addAnimation('move', Phaser.Animation.generateFrameNames('spider', 0, 7, '', 2));
+  spider.addAnimation('die', Phaser.Animation.generateFrameNames('bigexplosion', 0, 7, '', 2));
+  spider.onCreation(function(creature){
+    creature.animations.play('move');
   });
-  scorpion.set('dir', Math.random() < 0.5 ? -1 : 1);
-  scorpion.addMovement(function(creature){
-      creature.x += 5;
-      creature.y += 5;
+
+  spider.onDeath(function(creature){
+    creature.animations.play('die', 30, false, true);
+  });
+  spider.set('state', true);
+  spider.set('time', 0);
+  spider.set('dir', Math.random() < 0.5 ? -1 : 1);
+  function zigZag(creature){
+    creature.x += 1;
+    if(Math.ceil(Math.abs(creature.x)) % 100 === 0){
+      creature.dir = creature.dir * -1;
+    }
+    creature.y += 1 * creature.dir;
+  }
+  function upAndDown(creature){
+    if(Math.ceil(Math.abs(creature.time)) % 75 === 0){
+      creature.dir = creature.dir * -1;
+    }
+    creature.y += 2 * creature.dir;
+  }
+  spider.addMovement(function(creature){
+    creature.time += 1;
+    if(Math.ceil(Math.abs(creature.time)) % 100 === 0){
+      creature.state = !creature.state;
+    }
+    if(creature.state){
+      zigZag(creature);
+    } else {
+      upAndDown(creature);
+    }
   });
 
   // Create 10 scorpions
-  for(var i = 0;i < 10;i++){
+  for(var i = 0;i < 1;i++){
       function rand(){
           return Math.random() * 400;
       }
-      scorpion.create(rand(), rand());
+      spider.create(rand(), rand());
   }
 
   spawnCentipede(game.width/2, 16);
@@ -122,6 +143,7 @@ function update(){
   game.physics.arcade.overlap(flea, player, fleaHitsPlayer, null, this);
   game.physics.arcade.overlap(bolts, flea, boltHitsFlea, null, this);
   game.physics.arcade.overlap(bolts, scorpion, boltHitsScorpion, null, this);
+  game.physics.arcade.overlap(bolts, monsters.getGroup(), monsters.damage, null, this);
   player.body.velocity.setTo(0, 0);
 
 
@@ -269,12 +291,17 @@ function spawnMushrooms(){
 }
 
 // Should be responsible for placement/spawning of all monsters truly
-function MonsterManager(){
+function MonsterManager(game){
     var monsters = [];
-
+    var monsterGroup = game.add.group(undefined, 'monsters', false, false, Phaser.Physics.ARCADE);
     // Add a guy
     this.addMonster = function(monster){
+        monsterGroup.add(monster);
         monsters.push(monster);
+    }
+
+    this.getGroup = function(){
+      return monsterGroup;
     }
 
     // Make them groove
@@ -282,6 +309,10 @@ function MonsterManager(){
         for(var i = 0, j = monsters.length;i < j;i++){
             monsters[i].move();
         }
+    }
+
+    this.damage = function(object, creature){
+      creature.damage(1);
     }
 }
 
@@ -301,7 +332,7 @@ function MonsterGenerator(game, atlas, manager){
             game.physics.enable(creature, Phaser.Physics.ARCADE);
             creature.health = health;
             for(var i = 0, j = animations.length; i < j;i++){
-                creature.animations.add(animations[i].animation, Phaser.Animation.generateFrameNames(animations[i].frame, 0, 3, '', 2), 10, true);
+                creature.animations.add(animations[i].animation, animations[i].frameData, 10, true);
             }
             for(var i = 0, j = Object.keys(this['attrs']);i < j.length;i++){
                 creature[j[i]] = this['attrs'][j[i]];
@@ -310,6 +341,7 @@ function MonsterGenerator(game, atlas, manager){
                 moveFn(creature);
             } : self.movement(creature);
             creation(creature);
+            creature.events.onKilled.add(death, creature);
             manager.addMonster(creature);
             return creature;
         }
@@ -323,18 +355,20 @@ function MonsterGenerator(game, atlas, manager){
         }
 
         // Add animations
-        self.addAnimation = function(animation, frame){
-            animations.push({'animation': animation, 'frame': frame});
+        self.addAnimation = function(animation, frameData){
+            animations.push({'animation': animation, 'frameData': frameData});
         }
 
         self.onCreation = function(fn){
             creation = function(creature){
-                fn(creature, animations);
+                fn(creature);
             }
         }
 
         self.onDeath = function(fn){
-            self.death = fn(animations);
+            death = function(){
+              fn(this);
+            }
         }
 
         // Try not to use too often
@@ -437,6 +471,11 @@ function boltHitsMushroom (bolt, mushroom) {
 function boltHitsFlea(){
   score += 500;
   fleaDies();
+}
+
+function shootBugger(player, creature){
+  score += 1000;
+  creature.kill();
 }
 
 function boltHitsScorpion(){
