@@ -2,7 +2,7 @@
 var HEADER_OFFSET = 16;
 var PLAYER_SPEED = 300;
 var BOUND_PLAYER_HIGH = 432;
-var BOUND_PLAYER_LOW = 512;
+var BOUND_PLAYER_LOW = 528;
 var TOUCH = Phaser.Device.touch;
 
 var game;
@@ -18,29 +18,29 @@ else {
 // Characters/things you can see
 var player, bolts, centipedes, centipede, section, spider, scorpion, flea, mushrooms, life_sprites, monsters;
 // Mechanics
-var lives, score, speed, wave, wave_offset, fire_button, cursors, touch, touch_button, mushrows, mush_array;
+var lives, score, score_disp, hi_score_disp, speed, wave, wave_offset, fire_button, cursors, touch, touch_button, mushrows, mush_array;
 // Timers
 var flea_timer, scorpion_timer, spider_timer, score_timer; // Timers
 
 // Set up assets.
 function preload() {
+  game.load.bitmapFont('2P', 'assets/2P.png', 'assets/2P.fnt');
   game.load.atlasJSONHash('atlas', 'assets/centipede_sprites_1.png', 'assets/cent_sprites.json');
   game.load.spritesheet('button', 'assets/button.png', 512, 144);
 }
 
 // Set up objects and groups and place the first centipede.
 function create(){
+  score_disp = game.add.bitmapText(game.width/8, 0, '2P', null, 16);
+  hi_score_disp = game.add.bitmapText(game.width/2 - 20, 0, '2P', null, 16);
   mushrows = [];
   lives = 3;
   speed = 5;
   score = 0;
-  hi_score = 16543;
+  score_disp.setText(score.toString());
+  hi_score_disp.setText(16543);
   wave_offset = 0;
   game.physics.startSystem(Phaser.Physics.ARCADE);
-
-  var score_style = { font: "16px Arial", fill: "#ff0000", align: "center" };
-  game.add.text(0, 0, score, score_style);
-  game.add.text(game.width/2, 0, hi_score, score_style);
 
   mushrooms = game.add.group();
   mushrooms.enableBody = true;
@@ -91,6 +91,8 @@ function create(){
 
   spider.onDeath(function(creature){
     creature.animations.play('die', 30, false, true);
+    score += 900;
+    score_disp.setText(score.toString());
   });
   spider.set('state', true);
   spider.set('time', 0);
