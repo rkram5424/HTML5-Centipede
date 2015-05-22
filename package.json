@@ -1,0 +1,25 @@
+{
+  "name": "centipede",
+  "version": "0.0.0",
+  "description": "The arcade game Centipede we know and love but rewritten in HTML5.  Game engine: Phaser. Check them out. Cool stuff, great community.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rkram5424/HTML5-Centipede"
+  },
+  "author": "Ryan Kramlich <rkram5424@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rkram5424/HTML5-Centipede/issues"
+  },
+  "homepage": "https://github.com/manufacturedba/HTML5-Centipede",
+  "devDependencies": {
+    "restify": "~2.8.5",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt": "~0.4.5"
+  }
+}
