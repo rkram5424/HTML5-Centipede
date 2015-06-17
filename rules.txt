@@ -1,3 +1,6 @@
+CENTIPEDE GAMEPLAY MECHANICS
+(some numerical values are 'eyeballed')
+
 Centipede: 
 Descends from the middle of the top of the screen. When a centipede hits a mushroom or an edge, it drops down 1 row and reverses direction. 
 When a segment of a centipede is hit that is not a head or a tail, a mushroom appears where the segment was hit. The rest of the centipede continues on while the back end drops down and reverses direction. 
