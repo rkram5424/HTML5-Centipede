@@ -1,0 +1,34 @@
+Centipede: 
+Descends from the middle of the top of the screen. When a centipede hits a mushroom or an edge, it drops down 1 row and reverses direction. 
+When a segment of a centipede is hit that is not a head or a tail, a mushroom appears where the segment was hit. The rest of the centipede continues on while the back end drops down and reverses direction. 
+When a centipede hits a poisoned mushroom, it dives down to the bottom in a zig zag line of width 2.
+When a centipede reaches the bottom of the screen, fast-moving heads will begin to spawn from the bottom every few seconds until all centipede segments are cleared. The centipede and segments will move up until reaching the top of the player area and then proceed to move back down.
+As levels progress, the centipedes spawn accompanied by an additional fast moving head. (0 for level 1, 1 for level 2, and so on)
+
+Spider: 
+Spawns between 3 and 8 seconds after the last spider was killed or after the level starts.
+Behaves erratically, sometimes zigzagging, sometimes dropping, sometimes lunging straight for the player.
+Sometimes, spiders will eat mushrooms in the player area, thus drawing closer the spawning of a flea.
+
+Flea: 
+Appears when fewer than 5 mushrooms (damaged or full) remain in the player-accessible area.
+Drops lines of mushrooms. Line seems to be about 80% in density.
+
+Scorpion: 
+Appears every 10 to 30 seconds but not on the first 2 levels.
+Travels horizontally across the screen, never in the player area.
+Any mushroom it crosses over becomes poisoned. See Centipede.
+
+Scoring:
+Centipede Body Segment                              10 points
+Centipede Head                                     100
+Spider (distant range)                             300
+Spider (medium range)                              600
+Spider (close range--look out!)                    900
+Flea                                               200
+Scorpion                                          1000
+Mushroom (totally eliminated)                        1
+Mushroom (wounded or intact at end of turn)          5 for every 2
+Poisoned Mushroom (totally eliminated)               1
+Poisoned Mushroom (wounded or intact at end of turn) 5 for every 2
+Bonus Wand                                Every 10,000
